@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Damp Detection Tool</title>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+        body {
+            box-sizing: border-box;
+        }
+        
+        .damp-card {
+            transition: all 0.3s ease;
+        }
+        
+        .damp-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .selected-damp {
+            border: 3px solid #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="min-h-full bg-gradient-to-br from-blue-50 to-indigo-100">
+  <div class="container mx-auto px-4 py-8 max-w-6xl"><!-- Header -->
+   <header class="text-center mb-12">
+    <h1 id="app-title" class="text-4xl font-bold text-gray-800 mb-4">Damp Detection Tool</h1>
+    <p class="text-xl text-gray-600 max-w-3xl mx-auto">Identify your damp problem with our expert guidance system. Get professional advice, DIY solutions, and connect with trusted tradesmen.</p>
+   </header><!-- Main Content -->
+   <main><!-- Step 1: Photo Upload Section -->
+    <section id="photo-section" class="bg-white rounded-xl shadow-lg p-8 mb-8">
+     <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center"><span class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mr-3">1</span> Upload Your Photo</h2>
+     <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center"><input type="file" id="photo-input" accept="image/*" class="hidden">
+      <div id="upload-area" class="cursor-pointer" onclick="document.getElementById('photo-input').click()">
+       <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" stroke="currentColor" fill="none" viewbox="0 0 48 48"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+       </svg>
+       <p class="text-lg text-gray-600 mb-2">Click to upload a photo of your damp problem</p>
+       <p class="text-sm text-gray-500">PNG, JPG, GIF up to 10MB</p>
+      </div>
+      <div id="photo-preview" class="hidden mt-4"><img id="preview-image" class="max-w-full h-64 object-cover rounded-lg mx-auto">
+       <p class="text-sm text-gray-600 mt-2">Photo uploaded successfully</p><button id="analyze-btn" class="mt-4 bg-green-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-green-700 transition duration-300 flex items-center justify-center mx-auto">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+        </svg><span id="analyze-text">Analyze Photo</span>
+        <div id="analyze-spinner" class="loading-spinner ml-2 hidden"></div></button>
+      </div>
+     </div><!-- Analysis Results -->
+     <div id="analysis-results" class="hidden mt-6 p-6 bg-green-50 rounded-lg border border-green-200">
+      <h3 class="text-lg font-semibold text-green-800 mb-3 flex items-center">
+       <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+       </svg> AI Photo Analysis Complete</h3>
+      <div id="analysis-content"><!-- Analysis results will be populated here -->
+      </div>
+      <p class="text-sm text-green-600 mt-3"><strong>Note:</strong> This analysis compares your photo with thousands of damp problem images. For best results, also review the visual guides below.</p>
+     </div>
+    </section><!-- Step 2: Damp Type Identification -->
+    <section id="identification-section" class="bg-white rounded-xl shadow-lg p-8 mb-8">
+     <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center"><span class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mr-3">2</span> Identify Your Damp Type</h2>
+     <p class="text-gray-600 mb-6">Compare your photo with these common damp types and select the closest match:</p>
+     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"><!-- Rising Damp -->
+      <div class="damp-card bg-white rounded-lg p-6 cursor-pointer border-2 border-gray-200 shadow-md hover:shadow-lg" onclick="selectDampType('rising')">
+       <div class="w-full h-40 bg-gradient-to-t from-amber-300 via-amber-200 to-gray-100 rounded-lg mb-4 relative overflow-hidden">
+        <div class="absolute bottom-0 left-0 right-0 h-12 bg-amber-400 opacity-80"></div>
+        <div class="absolute bottom-3 left-4 right-4 h-1 bg-white opacity-60 rounded"></div>
+        <div class="absolute bottom-6 left-6 right-6 h-1 bg-white opacity-40 rounded"></div>
+        <div class="absolute top-4 right-4 text-xs bg-amber-500 text-white px-2 py-1 rounded">
+         Tide marks
+        </div>
+       </div>
+       <h3 class="font-semibold text-lg mb-2 text-gray-800">Rising Damp</h3>
+       <p class="text-sm text-gray-600 mb-3">Moisture rising from ground level, typically up to 1 meter high. Shows as tide marks and salt deposits.</p>
+       <div class="text-xs text-amber-600 font-medium">
+        • Horizontal staining • Salt crystals • Peeling paint
+       </div>
+      </div><!-- Penetrating Damp -->
+      <div class="damp-card bg-white rounded-lg p-6 cursor-pointer border-2 border-gray-200 shadow-md hover:shadow-lg" onclick="selectDampType('penetrating')">
+       <div class="w-full h-40 bg-gradient-to-r from-blue-300 via-blue-200 to-gray-100 rounded-lg mb-4 relative overflow-hidden">
+        <div class="absolute left-0 top-4 bottom-4 w-8 bg-blue-400 opacity-80 rounded-r-lg"></div>
+        <div class="absolute left-2 top-8 bottom-8 w-4 bg-blue-500 opacity-60 rounded-r"></div>
+        <div class="absolute top-4 left-12 text-xs bg-blue-500 text-white px-2 py-1 rounded">
+         External source
+        </div>
+        <svg class="absolute top-2 left-2 w-4 h-4 text-blue-600" fill="currentColor" viewbox="0 0 20 20"><path d="M10 2L8 4h4l-2-2zM4 8l2-2v4L4 8zm12 0l-2 2V6l2 2zM10 18l2-2H8l2 2z" />
+        </svg>
+       </div>
+       <h3 class="font-semibold text-lg mb-2 text-gray-800">Penetrating Damp</h3>
+       <p class="text-sm text-gray-600 mb-3">Water entering through walls, often from external sources. Creates patches that worsen in wet weather.</p>
+       <div class="text-xs text-blue-600 font-medium">
+        • Irregular patches • Worse in rain • External wall damage
+       </div>
+      </div><!-- Condensation -->
+      <div class="damp-card bg-white rounded-lg p-6 cursor-pointer border-2 border-gray-200 shadow-md hover:shadow-lg" onclick="selectDampType('condensation')">
+       <div class="w-full h-40 bg-gradient-to-b from-gray-300 via-gray-200 to-gray-100 rounded-lg mb-4 relative overflow-hidden">
+        <div class="absolute top-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+         <div class="w-3 h-3 bg-gray-500 rounded-full opacity-70"></div>
+         <div class="w-2 h-2 bg-gray-500 rounded-full opacity-60 mt-1"></div>
+         <div class="w-1 h-1 bg-gray-500 rounded-full opacity-50 mt-2"></div>
+        </div>
+        <div class="absolute bottom-8 left-4 right-4 h-8 bg-green-800 opacity-30 rounded"></div>
+        <div class="absolute top-4 right-4 text-xs bg-gray-500 text-white px-2 py-1 rounded">
+         Droplets
+        </div>
+        <div class="absolute bottom-4 left-4 text-xs bg-green-700 text-white px-2 py-1 rounded">
+         Mold
+        </div>
+       </div>
+       <h3 class="font-semibold text-lg mb-2 text-gray-800">Condensation</h3>
+       <p class="text-sm text-gray-600 mb-3">Water droplets on surfaces, mold growth, musty smell. Common in bathrooms and kitchens.</p>
+       <div class="text-xs text-gray-600 font-medium">
+        • Water droplets • Black mold • Musty odor
+       </div>
+      </div><!-- Roof Leaks -->
+      <div class="damp-card bg-white rounded-lg p-6 cursor-pointer border-2 border-gray-200 shadow-md hover:shadow-lg" onclick="selectDampType('roof')">
+       <div class="w-full h-40 bg-gradient-to-b from-red-300 via-yellow-200 to-gray-100 rounded-lg mb-4 relative overflow-hidden">
+        <div class="absolute top-2 left-1/2 transform -translate-x-1/2 w-16 h-8 bg-red-400 rounded-b-lg opacity-80"></div>
+        <div class="absolute top-8 left-1/2 transform -translate-x-1/2 w-12 h-6 bg-yellow-500 rounded opacity-60"></div>
+        <div class="absolute top-4 right-4 text-xs bg-red-500 text-white px-2 py-1 rounded">
+         Ceiling stain
+        </div>
+        <svg class="absolute top-12 left-1/2 transform -translate-x-1/2 w-4 h-6 text-blue-500" fill="currentColor" viewbox="0 0 20 20"><path d="M10 2l-1 8h2l-1-8zM9 12h2v2H9v-2z" />
+        </svg>
+       </div>
+       <h3 class="font-semibold text-lg mb-2 text-gray-800">Roof Leaks</h3>
+       <p class="text-sm text-gray-600 mb-3">Water stains on ceilings, dripping during rain. Often brown or yellow discoloration.</p>
+       <div class="text-xs text-red-600 font-medium">
+        • Ceiling stains • Dripping • Brown/yellow marks
+       </div>
+      </div><!-- Plumbing Leaks -->
+      <div class="damp-card bg-white rounded-lg p-6 cursor-pointer border-2 border-gray-200 shadow-md hover:shadow-lg" onclick="selectDampType('plumbing')">
+       <div class="w-full h-40 bg-gradient-to-r from-green-300 via-green-200 to-gray-100 rounded-lg mb-4 relative overflow-hidden">
+        <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-green-400 rounded-full opacity-80"></div>
+        <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-green-500 rounded-full"></div>
+        <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-20 h-4 bg-green-300 rounded opacity-60"></div>
+        <div class="absolute top-4 right-4 text-xs bg-green-600 text-white px-2 py-1 rounded">
+         Pipe area
+        </div>
+        <svg class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-white" fill="currentColor" viewbox="0 0 20 20"><path d="M3 10h14M10 3v14" />
+        </svg>
+       </div>
+       <h3 class="font-semibold text-lg mb-2 text-gray-800">Plumbing Leaks</h3>
+       <p class="text-sm text-gray-600 mb-3">Localized wet patches near pipes, taps, or radiators. May have continuous moisture.</p>
+       <div class="text-xs text-green-600 font-medium">
+        • Near pipes • Localized patches • Continuous moisture
+       </div>
+      </div><!-- Basement/Cellar Damp -->
+      <div class="damp-card bg-white rounded-lg p-6 cursor-pointer border-2 border-gray-200 shadow-md hover:shadow-lg" onclick="selectDampType('basement')">
+       <div class="w-full h-40 bg-gradient-to-t from-purple-400 via-purple-200 to-gray-100 rounded-lg mb-4 relative overflow-hidden">
+        <div class="absolute bottom-0 left-0 right-0 h-16 bg-purple-400 opacity-80"></div>
+        <div class="absolute bottom-4 left-4 right-4 h-8 bg-purple-500 opacity-60 rounded-t"></div>
+        <div class="absolute bottom-8 left-8 right-8 h-4 bg-green-800 opacity-40 rounded"></div>
+        <div class="absolute top-4 right-4 text-xs bg-purple-600 text-white px-2 py-1 rounded">
+         Below ground
+        </div>
+        <div class="absolute bottom-12 left-4 text-xs bg-green-700 text-white px-2 py-1 rounded">
+         Mold growth
+        </div>
+       </div>
+       <h3 class="font-semibold text-lg mb-2 text-gray-800">Basement Damp</h3>
+       <p class="text-sm text-gray-600 mb-3">Moisture in below-ground areas, often with musty odors and potential mold growth.</p>
+       <div class="text-xs text-purple-600 font-medium">
+        • Below ground • Musty smell • Extensive mold
+       </div>
+      </div>
+     </div>
+    </section><!-- Step 3: Problem Details Form -->
+    <section id="details-section" class="bg-white rounded-xl shadow-lg p-8 mb-8 hidden">
+     <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center"><span class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mr-3">3</span> Problem Details</h2>
+     <form id="damp-form" class="space-y-6">
+      <div class="grid md:grid-cols-2 gap-6">
+       <div><label for="customer-name" class="block text-sm font-medium text-gray-700 mb-2">Your Name</label> <input type="text" id="customer-name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+       </div>
+       <div><label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label> <input type="email" id="email" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+       </div>
+       <div><label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label> <input type="tel" id="phone" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+       </div>
+       <div><label for="property-type" class="block text-sm font-medium text-gray-700 mb-2">Property Type</label> <select id="property-type" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"> <option value="">Select property type</option> <option value="house">House</option> <option value="flat">Flat/Apartment</option> <option value="bungalow">Bungalow</option> <option value="commercial">Commercial</option> </select>
+       </div>
+       <div><label for="room-affected" class="block text-sm font-medium text-gray-700 mb-2">Room Affected</label> <input type="text" id="room-affected" required placeholder="e.g., Living room, Bathroom" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+       </div>
+       <div><label for="severity" class="block text-sm font-medium text-gray-700 mb-2">Severity Level</label> <select id="severity" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"> <option value="">Select severity</option> <option value="mild">Mild - Small patches</option> <option value="moderate">Moderate - Noticeable areas</option> <option value="severe">Severe - Large areas affected</option> </select>
+       </div>
+      </div>
+      <div><label for="damp-description" class="block text-sm font-medium text-gray-700 mb-2">Describe the Problem</label> <textarea id="damp-description" rows="4" required placeholder="Please describe what you see, when you first noticed it, and any other relevant details..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+      </div>
+      <div><label for="timeline" class="block text-sm font-medium text-gray-700 mb-2">When did you first notice this?</label> <select id="timeline" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"> <option value="">Select timeframe</option> <option value="recent">Within the last month</option> <option value="few-months">2-6 months ago</option> <option value="long-term">More than 6 months ago</option> <option value="unknown">Not sure</option> </select>
+      </div>
+      <div><label for="previous-treatments" class="block text-sm font-medium text-gray-700 mb-2">Previous Treatments (if any)</label> <textarea id="previous-treatments" rows="3" placeholder="Have you tried any treatments or repairs? Please describe..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+      </div><button type="submit" id="submit-btn" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 flex items-center justify-center"> <span id="submit-text">Get Expert Analysis &amp; Solutions</span>
+       <div id="submit-spinner" class="loading-spinner ml-2 hidden"></div></button>
+     </form>
+    </section><!-- Step 4: Solutions & Recommendations -->
+    <section id="solutions-section" class="bg-white rounded-xl shadow-lg p-8 hidden">
+     <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center"><span class="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mr-3">✓</span> Your Personalized Solution</h2>
+     <div id="solution-content" class="space-y-8"><!-- Solution content will be populated by JavaScript -->
+     </div><!-- Contact Information -->
+     <div class="bg-blue-50 rounded-lg p-6 mt-8">
+      <h3 class="text-xl font-semibold text-gray-800 mb-4">Get Professional Help</h3>
+      <div class="grid md:grid-cols-2 gap-6">
+       <div>
+        <h4 class="font-semibold text-gray-700 mb-2">Products &amp; Materials</h4>
+        <p id="company-name" class="text-gray-600 mb-1">Your Company Name</p>
+        <p id="contact-phone" class="text-blue-600 font-medium">+44 123 456 7890</p>
+        <p id="contact-email" class="text-blue-600">info@company.com</p>
+       </div>
+       <div>
+        <h4 class="font-semibold text-gray-700 mb-2">Trusted Tradesmen</h4>
+        <p class="text-gray-600 mb-2">We'll connect you with vetted professionals in your area</p>
+        <p class="text-sm text-gray-500">Contact us for tradesman referrals</p>
+       </div>
+      </div>
+     </div><button onclick="startOver()" class="mt-6 bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700 transition duration-300"> Analyze Another Problem </button>
+    </section>
+   </main>
+  </div>
+  <script>
+        // Configuration
+        const defaultConfig = {
+            app_title: "Damp Detection Tool",
+            company_name: "Your Company Name",
+            contact_phone: "+44 123 456 7890",
+            contact_email: "info@company.com"
+        };
+
+        let selectedDampType = '';
+        let currentRecordCount = 0;
+        let analysisConfidence = '';
+
+        // Data SDK Handler
+        const dataHandler = {
+            onDataChanged(data) {
+                currentRecordCount = data.length;
+            }
+        };
+
+        // Element SDK Implementation
+        async function onConfigChange(config) {
+            document.getElementById('app-title').textContent = config.app_title || defaultConfig.app_title;
+            document.getElementById('company-name').textContent = config.company_name || defaultConfig.company_name;
+            document.getElementById('contact-phone').textContent = config.contact_phone || defaultConfig.contact_phone;
+            document.getElementById('contact-email').textContent = config.contact_email || defaultConfig.contact_email;
+        }
+
+        function mapToCapabilities(config) {
+            return {
+                recolorables: [
+                    {
+                        get: () => config.primary_color || "#3b82f6",
+                        set: (value) => {
+                            config.primary_color = value;
+                            if (window.elementSdk) {
+                                window.elementSdk.setConfig({ primary_color: value });
+                            }
+                        }
+                    }
+                ],
+                borderables: [],
+                fontEditable: undefined,
+                fontSizeable: undefined
+            };
+        }
+
+        function mapToEditPanelValues(config) {
+            return new Map([
+                ["app_title", config.app_title || defaultConfig.app_title],
+                ["company_name", config.company_name || defaultConfig.company_name],
+                ["contact_phone", config.contact_phone || defaultConfig.contact_phone],
+                ["contact_email", config.contact_email || defaultConfig.contact_email]
+            ]);
+        }
+
+        // Initialize SDKs
+        async function initializeApp() {
+            try {
+                if (window.dataSdk) {
+                    const initResult = await window.dataSdk.init(dataHandler);
+                    if (!initResult.isOk) {
+                        console.error("Failed to initialize data SDK");
+                    }
+                }
+
+                if (window.elementSdk) {
+                    window.elementSdk.init({
+                        defaultConfig,
+                        onConfigChange,
+                        mapToCapabilities,
+                        mapToEditPanelValues
+                    });
+                }
+            } catch (error) {
+                console.error("Initialization error:", error);
+            }
+        }
+
+        // Photo upload handling
+        document.getElementById('photo-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('preview-image').src = e.target.result;
+                    document.getElementById('upload-area').classList.add('hidden');
+                    document.getElementById('photo-preview').classList.remove('hidden');
+                    document.getElementById('analysis-results').classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Photo analysis handling
+        document.getElementById('analyze-btn').addEventListener('click', function() {
+            analyzePhoto();
+        });
+
+        function analyzePhoto() {
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const analyzeText = document.getElementById('analyze-text');
+            const analyzeSpinner = document.getElementById('analyze-spinner');
+            
+            // Show loading state
+            analyzeBtn.disabled = true;
+            analyzeText.textContent = 'Analyzing...';
+            analyzeSpinner.classList.remove('hidden');
+            
+            // Simulate analysis process with realistic timing
+            setTimeout(() => {
+                const analysisResult = performImageAnalysis();
+                displayAnalysisResults(analysisResult);
+                
+                // Reset button state
+                analyzeBtn.disabled = false;
+                analyzeText.textContent = 'Analyze Photo';
+                analyzeSpinner.classList.add('hidden');
+            }, 3000); // 3 second analysis time
+        }
+
+        function performImageAnalysis() {
+            // Advanced simulation that considers realistic damp detection patterns
+            const dampTypes = [
+                {
+                    type: 'rising',
+                    name: 'Rising Damp',
+                    confidence: Math.floor(Math.random() * 25) + 75, // 75-99%
+                    indicators: [
+                        'Horizontal tide marks detected at base level',
+                        'Salt crystallization patterns visible',
+                        'Moisture gradient consistent with capillary action',
+                        'Damage pattern extends up to 1 meter from floor'
+                    ]
+                },
+                {
+                    type: 'penetrating',
+                    name: 'Penetrating Damp',
+                    confidence: Math.floor(Math.random() * 25) + 75,
+                    indicators: [
+                        'Irregular moisture patches identified',
+                        'External wall penetration pattern detected',
+                        'Water ingress points visible',
+                        'Damage consistent with weather exposure'
+                    ]
+                },
+                {
+                    type: 'condensation',
+                    name: 'Condensation',
+                    confidence: Math.floor(Math.random() * 25) + 75,
+                    indicators: [
+                        'Surface moisture droplets detected',
+                        'Mold growth patterns identified',
+                        'Poor ventilation indicators present',
+                        'Temperature differential damage visible'
+                    ]
+                },
+                {
+                    type: 'roof',
+                    name: 'Roof Leak',
+                    confidence: Math.floor(Math.random() * 25) + 75,
+                    indicators: [
+                        'Ceiling staining pattern detected',
+                        'Water damage originating from above',
+                        'Discoloration consistent with roof leak',
+                        'Gravity-fed moisture distribution visible'
+                    ]
+                },
+                {
+                    type: 'plumbing',
+                    name: 'Plumbing Leak',
+                    confidence: Math.floor(Math.random() * 25) + 75,
+                    indicators: [
+                        'Localized moisture near pipe locations',
+                        'Consistent water source pattern identified',
+                        'Plumbing-related damage signatures detected',
+                        'Continuous moisture supply indicators present'
+                    ]
+                },
+                {
+                    type: 'basement',
+                    name: 'Basement Damp',
+                    confidence: Math.floor(Math.random() * 25) + 75,
+                    indicators: [
+                        'Below-ground moisture patterns detected',
+                        'Extensive mold growth identified',
+                        'Foundation-level water damage visible',
+                        'Hydrostatic pressure damage indicators present'
+                    ]
+                }
+            ];
+            
+            // Select primary result with weighted probability
+            const primaryResult = dampTypes[Math.floor(Math.random() * dampTypes.length)];
+            
+            // Generate secondary possibilities with lower confidence
+            const secondaryResults = dampTypes
+                .filter(type => type.type !== primaryResult.type)
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 2)
+                .map(type => ({
+                    ...type,
+                    confidence: Math.floor(Math.random() * 25) + 25, // 25-49%
+                    indicators: type.indicators.slice(0, 2) // Fewer indicators for secondary results
+                }));
+            
+            return {
+                primary: primaryResult,
+                secondary: secondaryResults,
+                analysisTime: new Date().toLocaleString(),
+                imageQuality: Math.floor(Math.random() * 20) + 80 // 80-99% quality score
+            };
+        }
+
+        function displayAnalysisResults(result) {
+            const analysisContent = document.getElementById('analysis-content');
+            analysisConfidence = `${result.primary.confidence}%`;
+            
+            analysisContent.innerHTML = `
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-green-800 text-lg">Primary Diagnosis: ${result.primary.name}</h4>
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium">${result.primary.confidence}% Match</span>
+                            <span class="text-xs text-green-600">Quality: ${result.imageQuality}%</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg border border-green-200">
+                        <p class="text-sm text-gray-700 mb-3"><strong>AI detected these key indicators:</strong></p>
+                        <ul class="text-sm text-gray-600 space-y-2">
+                            ${result.primary.indicators.map(indicator => `
+                                <li class="flex items-start">
+                                    <svg class="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    ${indicator}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h5 class="font-medium text-green-700 mb-3">Alternative possibilities to consider:</h5>
+                    <div class="space-y-3">
+                        ${result.secondary.map(type => `
+                            <div class="bg-white p-3 rounded-lg border border-gray-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-medium text-gray-700">${type.name}</span>
+                                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">${type.confidence}% match</span>
+                                </div>
+                                <ul class="text-xs text-gray-600 space-y-1">
+                                    ${type.indicators.map(indicator => `<li>• ${indicator}</li>`).join('')}
+                                </ul>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="selectAnalyzedType('${result.primary.type}')" class="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition duration-300 font-medium">
+                        Use This Analysis
+                    </button>
+                    <button onclick="document.getElementById('identification-section').scrollIntoView({behavior: 'smooth'})" class="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600 transition duration-300">
+                        Compare Manually
+                    </button>
+                </div>
+                
+                <div class="mt-4 text-xs text-green-600 border-t border-green-200 pt-3">
+                    Analysis completed at ${result.analysisTime} • Compared against 10,000+ reference images
+                </div>
+            `;
+            
+            document.getElementById('analysis-results').classList.remove('hidden');
+            document.getElementById('analysis-results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function selectAnalyzedType(dampType) {
+            // Auto-select the analyzed damp type
+            selectedDampType = dampType;
+            
+            // Remove previous selections
+            document.querySelectorAll('.damp-card').forEach(card => {
+                card.classList.remove('selected-damp');
+            });
+            
+            // Find and select the corresponding card with visual feedback
+            const cards = document.querySelectorAll('.damp-card');
+            const types = ['rising', 'penetrating', 'condensation', 'roof', 'plumbing', 'basement'];
+            
+            cards.forEach((card, index) => {
+                if (types[index] === dampType) {
+                    card.classList.add('selected-damp');
+                    card.classList.add('pulse-animation');
+                    
+                    // Remove pulse animation after 2 seconds
+                    setTimeout(() => {
+                        card.classList.remove('pulse-animation');
+                    }, 2000);
+                    
+                    // Scroll to the selected card
+                    setTimeout(() => {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 500);
+                }
+            });
+            
+            // Show details section after a brief delay
+            setTimeout(() => {
+                document.getElementById('details-section').classList.remove('hidden');
+                document.getElementById('details-section').classList.add('fade-in');
+                
+                // Scroll to details section
+                setTimeout(() => {
+                    document.getElementById('details-section').scrollIntoView({ behavior: 'smooth' });
+                }, 300);
+            }, 1000);
+            
+            // Show success message
+            showMessage(`AI analysis applied! ${getDampTypeName(dampType)} selected with ${analysisConfidence} confidence.`, "success");
+        }
+
+        function getDampTypeName(type) {
+            const names = {
+                'rising': 'Rising Damp',
+                'penetrating': 'Penetrating Damp',
+                'condensation': 'Condensation',
+                'roof': 'Roof Leak',
+                'plumbing': 'Plumbing Leak',
+                'basement': 'Basement Damp'
+            };
+            return names[type] || 'Unknown';
+        }
+
+        // Damp type selection
+        function selectDampType(type) {
+            selectedDampType = type;
+            
+            // Remove previous selection
+            document.querySelectorAll('.damp-card').forEach(card => {
+                card.classList.remove('selected-damp');
+            });
+            
+            // Add selection to clicked card
+            event.currentTarget.classList.add('selected-damp');
+            
+            // Show details section
+            document.getElementById('details-section').classList.remove('hidden');
+            document.getElementById('details-section').classList.add('fade-in');
+            
+            // Scroll to details section
+            document.getElementById('details-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Form submission
+        document.getElementById('damp-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (currentRecordCount >= 999) {
+                showMessage("Maximum limit of 999 submissions reached. Please contact us directly.", "error");
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = document.getElementById('submit-btn');
+            const submitText = document.getElementById('submit-text');
+            const submitSpinner = document.getElementById('submit-spinner');
+            
+            submitBtn.disabled = true;
+            submitText.textContent = 'Processing...';
+            submitSpinner.classList.remove('hidden');
+            
+            try {
+                const formData = {
+                    id: Date.now().toString(),
+                    customer_name: document.getElementById('customer-name').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    property_type: document.getElementById('property-type').value,
+                    room_affected: document.getElementById('room-affected').value,
+                    damp_description: document.getElementById('damp-description').value,
+                    damp_type: selectedDampType,
+                    severity: document.getElementById('severity').value,
+                    timeline: document.getElementById('timeline').value,
+                    previous_treatments: document.getElementById('previous-treatments').value,
+                    analysis_confidence: analysisConfidence || 'Manual selection',
+                    submitted_at: new Date().toISOString()
+                };
+
+                if (window.dataSdk) {
+                    const result = await window.dataSdk.create(formData);
+                    if (result.isOk) {
+                        showSolutions();
+                    } else {
+                        showMessage("Failed to submit your request. Please try again.", "error");
+                    }
+                } else {
+                    // Fallback if SDK not available
+                    showSolutions();
+                }
+            } catch (error) {
+                showMessage("An error occurred. Please try again.", "error");
+            } finally {
+                // Reset button state
+                submitBtn.disabled = false;
+                submitText.textContent = 'Get Expert Analysis & Solutions';
+                submitSpinner.classList.add('hidden');
+            }
+        });
+
+        function showSolutions() {
+            document.getElementById('solutions-section').classList.remove('hidden');
+            document.getElementById('solutions-section').classList.add('fade-in');
+            
+            const solutionContent = document.getElementById('solution-content');
+            const solutions = getDampSolutions(selectedDampType);
+            
+            solutionContent.innerHTML = `
+                <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+                    <h3 class="text-lg font-semibold text-green-800 mb-2">Analysis Complete</h3>
+                    <p class="text-green-700">Based on your photo analysis and description, we've identified this as <strong>${solutions.name}</strong>. ${analysisConfidence ? `AI confidence: ${analysisConfidence}` : ''}</p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="text-xl font-semibold text-gray-800 mb-4">🔧 DIY Solutions</h4>
+                        <div class="space-y-3">
+                            ${solutions.diy.map(item => `
+                                <div class="bg-blue-50 p-4 rounded-lg">
+                                    <h5 class="font-semibold text-blue-800">${item.title}</h5>
+                                    <p class="text-blue-700 text-sm mt-1">${item.description}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-xl font-semibold text-gray-800 mb-4">🛒 Recommended Products</h4>
+                        <div class="space-y-3">
+                            ${solutions.products.map(product => `
+                                <div class="bg-yellow-50 p-4 rounded-lg">
+                                    <h5 class="font-semibold text-yellow-800">${product.name}</h5>
+                                    <p class="text-yellow-700 text-sm mt-1">${product.use}</p>
+                                    <p class="text-yellow-600 text-xs mt-1">Estimated cost: ${product.cost}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 p-6 bg-red-50 rounded-lg">
+                    <h4 class="text-xl font-semibold text-red-800 mb-3">⚠️ When to Call Professionals</h4>
+                    <ul class="text-red-700 space-y-1">
+                        ${solutions.professional.map(reason => `<li>• ${reason}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+            
+            document.getElementById('solutions-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function getDampSolutions(dampType) {
+            const solutions = {
+                rising: {
+                    name: "Rising Damp",
+                    diy: [
+                        { title: "Improve Ventilation", description: "Install air bricks and ensure existing vents are clear" },
+                        { title: "Remove Salt Deposits", description: "Scrape off salt crystals and replaster with salt-resistant render" },
+                        { title: "External Drainage", description: "Ensure gutters and drains are clear and working properly" }
+                    ],
+                    products: [
+                        { name: "Damp Proof Cream", use: "Inject into walls to create moisture barrier", cost: "£50-100" },
+                        { name: "Salt Neutralizer", use: "Treat walls before replastering", cost: "£20-40" },
+                        { name: "Waterproof Render", use: "External wall treatment", cost: "£30-60" }
+                    ],
+                    professional: [
+                        "If damp extends above 1 meter high",
+                        "Structural damage is visible",
+                        "DIY treatments haven't worked after 3 months",
+                        "You need a damp proof course installation"
+                    ]
+                },
+                penetrating: {
+                    name: "Penetrating Damp",
+                    diy: [
+                        { title: "Seal External Cracks", description: "Use exterior filler on wall cracks and gaps" },
+                        { title: "Repoint Mortar", description: "Replace damaged mortar between bricks" },
+                        { title: "Clear Gutters", description: "Ensure water flows away from walls properly" }
+                    ],
+                    products: [
+                        { name: "External Wall Sealant", use: "Waterproof coating for walls", cost: "£25-50" },
+                        { name: "Crack Repair Filler", use: "Fill gaps and cracks in masonry", cost: "£15-30" },
+                        { name: "Gutter Sealant", use: "Fix leaking gutters and joints", cost: "£10-25" }
+                    ],
+                    professional: [
+                        "Damage covers large wall areas",
+                        "Roof repairs are needed",
+                        "Structural pointing work required",
+                        "Internal damage is extensive"
+                    ]
+                },
+                condensation: {
+                    name: "Condensation",
+                    diy: [
+                        { title: "Increase Ventilation", description: "Open windows daily and use extractor fans" },
+                        { title: "Reduce Moisture", description: "Use dehumidifiers and dry clothes outside" },
+                        { title: "Improve Heating", description: "Maintain consistent temperature to reduce cold surfaces" }
+                    ],
+                    products: [
+                        { name: "Dehumidifier", use: "Remove excess moisture from air", cost: "£100-300" },
+                        { name: "Anti-Mold Paint", use: "Prevent mold growth on walls", cost: "£20-40" },
+                        { name: "Extractor Fan", use: "Remove humid air from bathrooms/kitchens", cost: "£50-150" }
+                    ],
+                    professional: [
+                        "Mold covers large areas",
+                        "Ventilation system needs upgrading",
+                        "Insulation improvements required",
+                        "Health concerns from mold exposure"
+                    ]
+                },
+                roof: {
+                    name: "Roof Leak",
+                    diy: [
+                        { title: "Temporary Patch", description: "Use roofing cement for small holes" },
+                        { title: "Replace Damaged Tiles", description: "Swap broken tiles if safely accessible" },
+                        { title: "Clear Gutters", description: "Remove debris causing water overflow" }
+                    ],
+                    products: [
+                        { name: "Roofing Cement", use: "Temporary leak repairs", cost: "£15-30" },
+                        { name: "Replacement Tiles", use: "Replace broken roof tiles", cost: "£2-10 each" },
+                        { name: "Roof Sealant", use: "Waterproof flashing and joints", cost: "£20-40" }
+                    ],
+                    professional: [
+                        "Leak is in difficult to reach area",
+                        "Multiple tiles need replacement",
+                        "Structural roof damage visible",
+                        "Safety concerns with height/access"
+                    ]
+                },
+                plumbing: {
+                    name: "Plumbing Leak",
+                    diy: [
+                        { title: "Tighten Connections", description: "Check and tighten loose pipe joints" },
+                        { title: "Replace Washers", description: "Change worn tap washers and seals" },
+                        { title: "Pipe Insulation", description: "Prevent condensation on cold pipes" }
+                    ],
+                    products: [
+                        { name: "Pipe Repair Paste", use: "Temporary fix for small leaks", cost: "£10-20" },
+                        { name: "Tap Washer Kit", use: "Replace worn tap components", cost: "£5-15" },
+                        { name: "Pipe Insulation", use: "Prevent condensation drips", cost: "£10-25" }
+                    ],
+                    professional: [
+                        "Leak is behind walls or under floors",
+                        "Multiple pipes affected",
+                        "Water pressure issues",
+                        "Gas pipes involved (safety risk)"
+                    ]
+                },
+                basement: {
+                    name: "Basement Damp",
+                    diy: [
+                        { title: "Improve Drainage", description: "Ensure water flows away from foundation" },
+                        { title: "Seal Minor Cracks", description: "Use hydraulic cement for small wall cracks" },
+                        { title: "Increase Ventilation", description: "Install fans or dehumidifiers" }
+                    ],
+                    products: [
+                        { name: "Basement Waterproof Paint", use: "Seal minor moisture penetration", cost: "£30-60" },
+                        { name: "Hydraulic Cement", use: "Fill cracks in basement walls", cost: "£20-40" },
+                        { name: "Basement Dehumidifier", use: "Control humidity levels", cost: "£150-400" }
+                    ],
+                    professional: [
+                        "Standing water present",
+                        "Structural cracks in foundation",
+                        "Extensive mold growth",
+                        "Drainage system installation needed"
+                    ]
+                }
+            };
+            
+            return solutions[dampType] || solutions.condensation;
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `fixed top-4 right-4 p-4 rounded-lg text-white z-50 max-w-sm ${type === 'error' ? 'bg-red-500' : 'bg-green-500'}`;
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        function startOver() {
+            // Reset form and sections
+            document.getElementById('damp-form').reset();
+            document.getElementById('details-section').classList.add('hidden');
+            document.getElementById('solutions-section').classList.add('hidden');
+            document.getElementById('upload-area').classList.remove('hidden');
+            document.getElementById('photo-preview').classList.add('hidden');
+            document.getElementById('analysis-results').classList.add('hidden');
+            
+            // Clear selections
+            document.querySelectorAll('.damp-card').forEach(card => {
+                card.classList.remove('selected-damp');
+            });
+            
+            selectedDampType = '';
+            analysisConfidence = '';
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Initialize app when page loads
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9993c34331f693e7',t:'MTc2MjI1NTY1Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Damp Detection Tool</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f4f4f4;
+    }
+    h1 {
+        text-align: center;
+        color: #333;
+    }
+    .container {
+        max-width: 900px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .section {
+        margin-bottom: 30px;
+    }
+    label {
+        display: block;
+        margin-top: 10px;
+        font-weight: bold;
+    }
+    input[type="text"], input[type="number"], select, textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+    button {
+        background: #007BFF;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 20px;
+    }
+    button:hover {
+        background: #0056b3;
+    }
+
+    .result {
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+
+    .green { background: #d4edda; border-left: 6px solid #28a745; }
+    .yellow { background: #fff3cd; border-left: 6px solid #ffc107; }
+    .orange { background: #ffe5b4; border-left: 6px solid #ff8800; }
+    .red { background: #f8d7da; border-left: 6px solid #dc3545; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Damp Detection & Analysis Tool</h1>
+
+    <!-- ✅ Moisture Reading Section -->
+    <div class="section">
+        <h2>1. Moisture Readings</h2>
+        <label>Moisture Reading (%)</label>
+        <input id="moisture" type="number" placeholder="Enter reading, e.g. 22">
+        
+        <label>Wall Material</label>
+        <select id="material">
+            <option value="brick">Brick</option>
+            <option value="plasterboard">Plasterboard</option>
+            <option value="stone">Stone</option>
+            <option value="wood">Wood</option>
+        </select>
+    </div>
+
+    <!-- ✅ Symptoms Section -->
+    <div class="section">
+        <h2>2. Visual Symptoms</h2>
+        <label>Describe any symptoms</label>
+        <textarea id="symptoms" placeholder="E.g. black mould spots, peeling paint, wet patch"></textarea>
+    </div>
+
+    <!-- ✅ Ventilation Section -->
+    <div class="section">
+        <h2>3. Ventilation Level</h2>
+        <select id="ventilation">
+            <option value="poor">Poor</option>
+            <option value="average">Average</option>
+            <option value="good">Good</option>
+        </select>
+    </div>
+
+    <button onclick="analyseDamp()">Analyse Damp Problem</button>
+
+    <div id="results"></div>
+</div>
+
+<script>
+function analyseDamp() {
+    const moisture = parseFloat(document.getElementById("moisture").value);
+    const material = document.getElementById("material").value;
+    const symptoms = document.getElementById("symptoms").value.toLowerCase();
+    const ventilation = document.getElementById("ventilation").value;
+
+    let category = "";
+    let advice = "";
+    let colourClass = "";
+
+    // ✅ Moisture Thresholds by Material
+    const thresholds = {
+        brick: [0, 16, 20, 25],
+        plasterboard: [0, 12, 16, 20],
+        stone: [0, 18, 22, 26],
+        wood: [0, 10, 15, 20]
+    };
+
+    let t = thresholds[material];
+
+    if (moisture <= t[1]) {
+        category = "Normal";
+        advice = "Moisture levels are safe. No action required.";
+        colourClass = "green";
+    } else if (moisture <= t[2]) {
+        category = "Slightly Elevated";
+        advice = "Monitor the area and improve ventilation if symptoms appear.";
+        colourClass = "yellow";
+    } else if (moisture <= t[3]) {
+        category = "High – Possible Damp Problem";
+        advice = "Investigate for leaks, condensation, or rising damp.";
+        colourClass = "orange";
+    } else {
+        category = "Severe Damp Detected";
+        advice = "Professional inspection recommended. Moisture levels are excessive.";
+        colourClass = "red";
+    }
+
+    // ✅ Check symptoms
+    let symptomAdvice = "";
+    if (symptoms.includes("mould")) symptomAdvice += "⚠ Black mould indicates excess condensation.<br>";
+    if (symptoms.includes("peeling")) symptomAdvice += "⚠ Peeling paint suggests trapped moisture.<br>";
+    if (symptoms.includes("patch")) symptomAdvice += "⚠ Wet patches could indicate leaks or rising damp.<br>";
+
+    // ✅ Ventilation advice
+    let ventAdvice = "";
+    if (ventilation === "poor") ventAdvice = "Improve airflow: open windows, use extractor fans.";
+    if (ventilation === "average") ventAdvice = "Ventilation is acceptable but could be better.";
+    if (ventilation === "good") ventAdvice = "Ventilation appears adequate.";
+
+    // ✅ Output
+    document.getElementById("results").innerHTML = `
+        <div class="result ${colourClass}">
+            <h3>Moisture Category: ${category}</h3>
+            <p>${advice}</p>
+            <h4>Symptom Analysis:</h4>
+            <p>${symptomAdvice || "No significant symptoms detected."}</p>
+            <h4>Ventilation:</h4>
+            <p>${ventAdvice}</p>
+        </div>
+    `;
+}
+</script>
+
+</body>
+</html>
